@@ -1,0 +1,12 @@
+# Overlay for the aurai-gateway chart: back the aurai-embed alias with an in-cluster Ollama model.
+# Nothing leaves the platform, so this is the option for confidential and restricted collections.
+#   helm upgrade aurai-gateway ../aurai-gateway/charts/aurai-gateway -n aurai-gateway --reuse-values \
+#     -f gateway/embed-ollama.values.yaml
+# Ollama must be reachable at apiBase and have the model pulled (ollama pull nomic-embed-text).
+# On Docker Desktop with kind, an Ollama running on the Windows host is reachable at http://host.docker.internal:11434.
+litellm:
+  modelOverrides:
+    aurai-embed:
+      model: ollama/nomic-embed-text
+      apiBase: http://host.docker.internal:11434
+      enabled: true

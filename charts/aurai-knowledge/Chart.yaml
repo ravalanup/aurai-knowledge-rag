@@ -1,0 +1,6 @@
+apiVersion: v2
+name: aurai-knowledge
+description: Aurai knowledge service - entitlement-aware retrieval API and scheduled ingestion
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

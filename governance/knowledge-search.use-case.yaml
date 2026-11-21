@@ -1,0 +1,37 @@
+# Use-case registration for the knowledge service, in the aurai-eval-governance format. The registered copy is
+# aurai-eval-governance/use-cases/knowledge-search.yaml, which also lists the evaluation suites. Fictional.
+id: knowledge-search
+name: Knowledge Search
+description: >
+  Returns passages from approved document collections that the signed-in user is entitled to read, each with a
+  citation. It retrieves and ranks; it does not generate answers or take actions.
+owner: Knowledge platform product manager
+stage: sandbox
+tier: T3
+gateway_team_id: knowledge
+data_classification: restricted
+uses_retrieval: true
+audience: company
+actions: none
+error_impact: material          # a wrong or missing passage misleads the answer built on it
+uses_protected_ip: false
+models:
+  - aurai-embed
+controls:
+  tracing: true
+  pii_masking: true            # the gateway masks embedding input at the team tier; see docs/embeddings.md for what that does to retrieval
+  entitlement_retrieval: true
+  citations: true
+  human_approval: none
+  golden_set_eval: planned     # eval/golden-set.yaml exists; becomes "passing" once live retrieval evidence for it is committed in aurai-eval-governance
+  red_team: planned
+  audit_retention: extended
+  monitoring: basic
+reviews:
+  - role: team_lead
+    approver: Knowledge platform product manager
+    date: "2026-11-20"
+pause_procedure: >
+  Run `aurai-governance pause knowledge-search` (blocks the gateway team, which stops embedding of new queries and
+  therefore search), then notify the owner and the platform on-call.
+notes: Synthetic example.

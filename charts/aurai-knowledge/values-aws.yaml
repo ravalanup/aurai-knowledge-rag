@@ -1,0 +1,12 @@
+global:
+  environment: aws
+image:
+  repository: ""                   # your ECR repository, e.g. 123456789012.dkr.ecr.us-east-1.amazonaws.com/aurai-knowledge
+  tag: "0.1.0"
+replicaCount: 2
+podDisruptionBudget:
+  enabled: true
+ingestion:
+  source: ""                       # s3://<bucket>/<prefix>
+serviceAccount:
+  annotations: {}                  # eks.amazonaws.com/role-arn: arn:aws:iam::<account>:role/aurai-knowledge-ingest

@@ -1,0 +1,12 @@
+# Overlay for the aurai-gateway chart: back the aurai-embed alias with Gemini embeddings.
+# Requires aurai-gateway with litellm.modelOverrides and the GEMINI_API_KEY secret the gemini aliases already use.
+#   helm upgrade aurai-gateway ../aurai-gateway/charts/aurai-gateway -n aurai-gateway --reuse-values \
+#     -f gateway/embed-gemini.values.yaml
+# Confirm the model name against the provider's current list first. Document text leaves the platform under the
+# provider's enterprise terms, which is why docs/embeddings.md limits this option to data cleared for that provider.
+litellm:
+  modelOverrides:
+    aurai-embed:
+      model: gemini/gemini-embedding-001
+      apiKeyEnv: GEMINI_API_KEY
+      enabled: true

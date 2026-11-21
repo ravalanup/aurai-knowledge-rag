@@ -1,0 +1,62 @@
+global:
+  environment: local
+
+image:
+  repository: aurai-knowledge
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  port: 8000
+
+config:
+  qdrantUrl: http://qdrant.aurai-system.svc.cluster.local:6333
+  qdrantCollection: aurai_knowledge
+  gatewayUrl: http://litellm.aurai-gateway.svc.cluster.local:4000
+  embedModel: aurai-embed          # a gateway alias; the model behind it is a gateway decision
+  embedBatchSize: 16
+  embedDimensions: ""              # blank = the model's native size; set it for models that allow truncation
+  oidcIssuer: http://keycloak.aurai-system.svc.cluster.local:8080/realms/aurai
+  oidcJwksUrl: ""                  # blank = derived from the issuer
+  oidcAudience: litellm
+  minScore: "0.0"
+  otlpEndpoint: http://otel-collector.aurai-system.svc.cluster.local:4318
+  useCaseId: knowledge-search
+  teamId: knowledge
+  riskTier: T2
+
+# The entitlement policy (config/entitlements.yaml). Supply it at install time so the file stays the single
+# source of truth:  --set-file entitlements=config/entitlements.yaml
+entitlements: ""
+
+secrets:
+  # Gateway virtual key for the "knowledge" team (embeddings only). Created outside the chart.
+  gatewayKey: { name: knowledge-secrets, key: AURAI_GATEWAY_KEY }
+  # Optional: Qdrant API key, when the Qdrant deployment requires one.
+  qdrantApiKey: { name: "", key: api-key }
+
+ingestion:
+  enabled: true
+  source: /corpus                  # a folder inside the image, or s3://bucket/prefix
+  schedule: "17 5 * * *"           # daily; collections are re-checked against their max_age_days
+  suspend: false
+  backoffLimit: 1
+  activeDeadlineSeconds: 1800
+
+serviceAccount:
+  create: true
+  annotations: {}                  # on EKS: eks.amazonaws.com/role-arn for read access to the document bucket
+
+resources:
+  requests: { cpu: 100m, memory: 256Mi }
+  limits: { memory: 512Mi }
+
+podDisruptionBudget:
+  enabled: false                   # turn on with replicaCount > 1
+
+networkPolicy:
+  enabled: true
+  # Namespaces whose pods may call the service. kind's default network plugin does not enforce policy.
+  allowFromNamespaces: [aurai-workspace]

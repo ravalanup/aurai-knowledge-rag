@@ -1,0 +1,51 @@
+{{- if .Values.ingestion.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: aurai-knowledge-ingest
+  labels:
+    {{- include "aurai-knowledge.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.ingestion.schedule | quote }}
+  suspend: {{ .Values.ingestion.suspend }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.ingestion.backoffLimit }}
+      activeDeadlineSeconds: {{ .Values.ingestion.activeDeadlineSeconds }}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: aurai-knowledge-ingest
+            app.kubernetes.io/instance: {{ .Release.Name }}
+        spec:
+          restartPolicy: Never
+          serviceAccountName: aurai-knowledge
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: ingest
+              image: {{ include "aurai-knowledge.image" . }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              args: ["ingest", "--source", {{ required "ingestion.source must be set" .Values.ingestion.source | quote }}]
+              env:
+                {{- include "aurai-knowledge.env" . | nindent 16 }}
+              resources:
+                requests: { cpu: 100m, memory: 256Mi }
+                limits: { memory: 512Mi }
+              securityContext:
+                {{- include "aurai-knowledge.securityContext" . | nindent 16 }}
+              volumeMounts:
+                - { name: entitlements, mountPath: /etc/aurai, readOnly: true }
+                - { name: tmp, mountPath: /tmp }
+          volumes:
+            - name: entitlements
+              configMap:
+                name: aurai-knowledge-entitlements
+            - name: tmp
+              emptyDir: {}
+{{- end }}

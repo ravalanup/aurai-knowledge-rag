@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aurai-knowledge
+  labels:
+    {{- include "aurai-knowledge.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "aurai-knowledge.selector" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aurai-knowledge.selector" . | nindent 8 }}
+      annotations:
+        # Roll the pods when the entitlement policy changes.
+        checksum/entitlements: {{ .Values.entitlements | sha256sum }}
+    spec:
+      serviceAccountName: aurai-knowledge
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: knowledge
+          image: {{ include "aurai-knowledge.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["serve", "--port", "8000"]
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            {{- include "aurai-knowledge.env" . | nindent 12 }}
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- include "aurai-knowledge.securityContext" . | nindent 12 }}
+          volumeMounts:
+            - { name: entitlements, mountPath: /etc/aurai, readOnly: true }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: entitlements
+          configMap:
+            name: aurai-knowledge-entitlements
+        - name: tmp
+          emptyDir: {}

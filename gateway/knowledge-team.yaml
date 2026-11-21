@@ -1,0 +1,20 @@
+# Gateway team for the knowledge service, in aurai-teamctl format (see aurai-gateway/teams/teams.yaml).
+#   aurai-teamctl apply gateway/knowledge-team.yaml --catalog ../aurai-gateway/config/model-catalog.yaml --base-url http://localhost:4000
+#   aurai-teamctl issue-key knowledge --teams gateway/knowledge-team.yaml --catalog ... --base-url ... --alias knowledge-service
+# The service only calls the embedding alias; it never sends text to a chat model. It is rated T2 because the
+# text it embeds can be confidential (restricted collections need the in-cluster embedder, see docs/embeddings.md).
+# The team is fictional.
+
+defaults:
+  budget_duration: 30d
+
+teams:
+  - team_id: knowledge
+    alias: Aurai Knowledge
+    risk_tier: T3
+    owner: Knowledge platform product manager
+    cost_center: CC-1600
+    models: [aurai-embed]
+    max_budget_usd: 150
+    rpm: 240
+    tpm: 400000
