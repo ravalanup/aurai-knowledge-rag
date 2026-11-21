@@ -1,0 +1,45 @@
+# Who may read what. Reviewed like code: every change is a pull request.
+#
+# Keys are group names exactly as they appear in the user's Keycloak access token (`groups` claim).
+# A grant names a classification CEILING per collection: the group may read documents in that collection
+# classified at or below the ceiling (public < internal < confidential < restricted). Groups combine
+# additively and the highest ceiling for a collection wins. A caller with no matching grant reads nothing.
+#
+# Workspace administrators are deliberately absent: managing the workspace does not grant access to
+# business documents (separation of duties).
+
+version: 1
+
+collections:
+  - guest-services
+  - ops-reports
+  - hr-policies
+  - finance-reporting
+
+grants:
+  # Everyone who can sign in to the workspace
+  - group: workspace-members
+    collections:
+      guest-services: internal
+      hr-policies: internal
+
+  # Builders also see internal operations reports so they can build assistants on them
+  - group: workspace-builders
+    collections:
+      guest-services: internal
+      hr-policies: internal
+      ops-reports: internal
+
+  # Knowledge groups, granted by the data owners
+  - group: knowledge-ops
+    collections:
+      ops-reports: confidential
+      guest-services: internal
+
+  - group: knowledge-hr
+    collections:
+      hr-policies: restricted
+
+  - group: knowledge-finance
+    collections:
+      finance-reporting: restricted

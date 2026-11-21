@@ -1,0 +1,6 @@
+# Synthetic collection for the Aurai demo. Every document is fictional.
+collection: guest-services
+team: guest-experience
+owner: Guest experience operations lead
+classification: public        # default; a document may raise it in its front matter, never lower it
+max_age_days: 30

@@ -1,0 +1,5 @@
+collection: ops-reports
+team: park-operations
+owner: Park operations analytics lead
+classification: internal
+max_age_days: 7
