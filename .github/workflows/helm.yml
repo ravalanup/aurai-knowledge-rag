@@ -1,0 +1,23 @@
+name: helm
+on:
+  push: { branches: [main], paths: ["charts/**", "config/**"] }
+  pull_request: { paths: ["charts/**", "config/**"] }
+permissions:
+  contents: read
+jobs:
+  chart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm lint charts/aurai-knowledge -f charts/aurai-knowledge/values-local.yaml --set-file entitlements=config/entitlements.yaml
+      - run: helm template t charts/aurai-knowledge -f charts/aurai-knowledge/values-local.yaml --set-file entitlements=config/entitlements.yaml > /tmp/local.yaml
+      - run: >
+          helm template t charts/aurai-knowledge -f charts/aurai-knowledge/values-aws.yaml
+          --set image.repository=123456789012.dkr.ecr.us-east-1.amazonaws.com/aurai-knowledge
+          --set ingestion.source=s3://example-bucket/knowledge
+          --set-file entitlements=config/entitlements.yaml > /tmp/aws.yaml
+      - name: kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
+          ./kubeconform -strict -summary /tmp/local.yaml /tmp/aws.yaml
