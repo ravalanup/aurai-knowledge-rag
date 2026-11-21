@@ -1,0 +1,146 @@
+# Golden set for retrieval quality and entitlement leakage (KN-5).
+#
+# Each case is a question a real persona would ask, the documents that should answer it, and optionally
+# documents that must never appear for that persona. Personas are groups as they appear in the token.
+#   expected:      at least one of these must be in the top-k (counts toward hit rate and MRR)
+#   forbidden:     none of these may be returned (counts toward leaks)
+#   expect_empty:  the search must return nothing (for example a refused collection)
+#   collections:   optional collection restriction sent with the request
+# Independently of 'forbidden', any returned passage the persona is not entitled to read is a leak.
+# Everything here is synthetic.
+
+version: 1
+
+thresholds:
+  hit_rate: 0.85
+  mrr: 0.60
+  max_leaks: 0
+
+personas:
+  member:  { groups: [workspace-members] }
+  builder: { groups: [workspace-builders] }
+  ops:     { groups: [workspace-members, knowledge-ops] }
+  hr:      { groups: [workspace-members, knowledge-hr] }
+  finance: { groups: [workspace-members, knowledge-finance] }
+  admin:   { groups: [workspace-admins] }
+
+cases:
+  # --- answerable questions
+  - id: refund-window
+    persona: member
+    query: How many days before my visit can I get a full refund on tickets?
+    expected: [guest-services/refund-policy.md]
+  - id: accessibility-pass
+    persona: member
+    query: How do I get an accessibility access pass and how many companions can come with me?
+    expected: [guest-services/accessibility-services.md]
+  - id: lost-item
+    persona: member
+    query: Where do I collect a lost item and how long is it kept?
+    expected: [guest-services/lost-and-found.md]
+  - id: queue-rebooking
+    persona: member
+    query: An attraction closed during my return window, how do I rebook?
+    expected: [guest-services/virtual-queue-rebooking.md]
+  - id: winter-hours
+    persona: member
+    query: What time does the park open and close in winter?
+    expected: [guest-services/seasonal-hours.txt]
+  - id: goodwill-credit
+    persona: member
+    query: How large a goodwill credit can Guest Relations approve without a manager?
+    expected: [guest-services/service-recovery-playbook.md]
+  - id: pto-carryover
+    persona: member
+    query: How many unused vacation days can I carry over into next year?
+    expected: [hr-policies/paid-time-off.md]
+  - id: onsite-days
+    persona: member
+    query: How many days a week must I be onsite for hybrid work?
+    expected: [hr-policies/remote-work-policy.md]
+  - id: vendor-gifts
+    persona: member
+    query: What is the limit on gifts from vendors?
+    expected: [hr-policies/code-of-conduct.md]
+  - id: ride-downtime
+    persona: ops
+    query: Which ride had the most unplanned downtime this week?
+    expected: [ops-reports/weekly-downtime-summary-w42.md]
+  - id: coaster-closure
+    persona: builder
+    query: When is the Comet Coaster closed for its track inspection?
+    expected: [ops-reports/maintenance-schedule-q1.md]
+  - id: seasonal-staff
+    persona: builder
+    query: How many seasonal staff do we need for the holiday season?
+    expected: [ops-reports/staffing-forecast-holiday-season.md]
+  - id: energy-per-guest
+    persona: builder
+    query: How much did energy use per guest change?
+    expected: [ops-reports/energy-usage-report.md]
+  - id: wheel-root-cause
+    persona: ops
+    query: What was the root cause of the Skyline Wheel stall?
+    expected: [ops-reports/incident-postmortem-2026-09-lift-stall.md]
+  - id: band-five-range
+    persona: hr
+    query: What is the annual salary range for Band 5?
+    expected: [hr-policies/compensation-bands-2026.md]
+  - id: leave-confidentiality
+    persona: hr
+    query: Who can see medical leave certifications?
+    expected: [hr-policies/leave-of-absence-procedure.md]
+  - id: q3-revenue
+    persona: finance
+    query: What was Q3 revenue and attendance?
+    expected: [finance-reporting/q3-revenue-summary.md]
+  - id: ops-over-budget
+    persona: finance
+    query: Why was operations over budget in Q3?
+    expected: [finance-reporting/budget-variance-q3.md]
+  - id: vendor-terms
+    persona: finance
+    query: What are the standard vendor payment terms and the early payment discount?
+    expected: [finance-reporting/vendor-payment-terms.md]
+  - id: lantern-capex
+    persona: finance
+    query: How much of the FY27 capital budget is allocated to Project Lantern?
+    expected: [finance-reporting/capex-plan-fy27.md]
+
+  # --- leak probes: the persona asks for something above their grant
+  - id: builder-postmortem-confidential
+    persona: builder
+    query: What was the root cause of the Skyline Wheel stall?
+    expected: [ops-reports/maintenance-schedule-q1.md]
+    forbidden: [ops-reports/incident-postmortem-2026-09-lift-stall.md]
+  - id: member-salary-bands
+    persona: member
+    query: What is the annual salary range for Band 5?
+    forbidden: [hr-policies/compensation-bands-2026.md]
+  - id: member-leave-certifications
+    persona: member
+    query: Who can see medical leave certifications?
+    forbidden: [hr-policies/leave-of-absence-procedure.md]
+  - id: ops-q3-revenue
+    persona: ops
+    query: What was Q3 revenue and attendance?
+    forbidden: [finance-reporting/q3-revenue-summary.md]
+  - id: finance-postmortem
+    persona: finance
+    query: What was the root cause of the Skyline Wheel stall?
+    forbidden: [ops-reports/incident-postmortem-2026-09-lift-stall.md]
+  - id: hr-capex
+    persona: hr
+    query: How much of the FY27 capital budget is allocated to Project Lantern?
+    forbidden: [finance-reporting/capex-plan-fy27.md]
+
+  # --- refusals
+  - id: member-requests-finance
+    persona: member
+    query: What was Q3 revenue?
+    collections: [finance-reporting]
+    expect_empty: true
+  - id: admin-has-no-business-data
+    persona: admin
+    query: How do I get a refund on tickets?
+    expect_empty: true
